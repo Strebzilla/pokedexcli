@@ -2,18 +2,16 @@ package main
 
 import (
 	"bufio"
-	"fmt"
 	"os"
+	"pokedexcli/repl"
 )
 
 func main() {
 	scanner := bufio.NewScanner(os.Stdin)
-	
+	prompt := "Pokedex > "
+
 	for {
-		fmt.Print("Pokedex > ")
-		scanner.Scan()
-		userInput := scanner.Text()
-		userCleanInput := cleanInput(userInput)
-		fmt.Println(fmt.Sprintf("Your command was: %s", userCleanInput[0]))
+		command := repl.ReadCommand(scanner, prompt)
+		repl.ExecuteCommand(command)
 	}
 }

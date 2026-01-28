@@ -1,4 +1,4 @@
-package main
+package repl
 
 import (
 	"testing"
@@ -6,7 +6,7 @@ import (
 
 func TestCleanInput(t *testing.T) {
 	cases := []struct {
-		input string
+		input    string
 		expected []string
 	}{
 		{
@@ -26,7 +26,6 @@ func TestCleanInput(t *testing.T) {
 			expected: []string{},
 		},
 	}
-
 
 	for _, c := range cases {
 		actual := cleanInput(c.input)
