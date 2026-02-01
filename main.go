@@ -1,10 +1,16 @@
+/*
+pokedexcli retrieves data from Poke API
+*/
 package main
 
-import ()
+import (
+	"log/slog"
+)
 
 var commands map[string]cliCommand
 
 func main() {
+	slog.Info("Program start")
 	prompt := "Pokedex > "
 	mapConfig := config{
 		next:     "https://pokeapi.co/api/v2/location-area/",

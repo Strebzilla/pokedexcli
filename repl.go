@@ -49,6 +49,12 @@ func ReadCommand(scanner *bufio.Scanner, prompt string) string {
 }
 
 func ExecuteCommand(command string) {
+	_, exists := commands[command]
+	if !exists {
+		fmt.Println("invalid command")
+		return
+	}
+
 	err := commands[command].callback()
 	if err != nil {
 		fmt.Println(fmt.Errorf("Error Executing callback: %w", err))
