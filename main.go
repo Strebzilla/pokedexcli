@@ -55,6 +55,12 @@ func main() {
 			callback:    inspect,
 			cfg:         nil,
 		},
+		"pokedex": {
+			name:        "pokedex",
+			description: "Lists all the pokemon that are in your current Pokedex",
+			callback:    pokedexList,
+			cfg:         nil,
+		},
 	}
 
 	startRepl(prompt)

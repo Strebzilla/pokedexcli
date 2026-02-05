@@ -182,6 +182,7 @@ func catch(parameters []string) error {
 	chance := rand.Intn(pokemon.BaseExperience)
 	if chance < 50 {
 		fmt.Printf("%s was caught!\n", pokemon.Name)
+		fmt.Println("You may now inspect it with the inspect command")
 		pokedex[pokemon.Name] = pokemon
 		return nil
 	}
@@ -212,5 +213,17 @@ func inspect(parameters []string) error {
 		fmt.Printf("  -%s\n", pokeType.Type.Name)
 	}
 
+	return nil
+}
+
+func pokedexList(parameters []string) error {
+	if len(pokedex) < 1 {
+		fmt.Println("Pokedex empty. Try the catch command")
+		return nil
+	}
+	fmt.Println("Your Pokedex:")
+	for _, pokemon := range pokedex {
+		fmt.Printf(" - %s\n", pokemon.Name)
+	}
 	return nil
 }
