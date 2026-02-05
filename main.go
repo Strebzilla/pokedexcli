@@ -49,6 +49,12 @@ func main() {
 			callback:    catch,
 			cfg:         nil,
 		},
+		"inspect": {
+			name:        "inspect",
+			description: "Prints the name, weight, stat, and type data about a Pokemon stored in the pokedex. Takes a pokemon name as an argument.",
+			callback:    inspect,
+			cfg:         nil,
+		},
 	}
 
 	startRepl(prompt)
