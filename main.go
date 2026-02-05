@@ -43,6 +43,12 @@ func main() {
 			callback:    explore,
 			cfg:         nil,
 		},
+		"catch": {
+			name:        "catch",
+			description: "Catches a pokemon. Takes a pokemon name as an argument",
+			callback:    catch,
+			cfg:         nil,
+		},
 	}
 
 	startRepl(prompt)

@@ -4,10 +4,13 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"math/rand"
 	"os"
 	"pokedexcli/internal/pokeapi"
 	"strings"
 )
+
+var pokedex map[string]pokeapi.Pokemon
 
 type cliCommand struct {
 	cfg         *config
@@ -27,6 +30,7 @@ func (c cliCommand) formatInfo() string {
 
 func startRepl(prompt string) {
 	scanner := bufio.NewScanner(os.Stdin)
+	pokedex = make(map[string]pokeapi.Pokemon)
 
 	for {
 		command, parameters := ReadCommand(scanner, prompt)
@@ -143,6 +147,9 @@ func explore(parameters []string) error {
 		return err
 	}
 	location, err := pokeapi.MarshalResults[pokeapi.Location](jsonData)
+	if err != nil {
+		return err
+	}
 
 	if len(location.PokemonEncounters) == 0 {
 		fmt.Println("No pokemon in this area")
@@ -151,5 +158,34 @@ func explore(parameters []string) error {
 	for _, pokemon := range location.PokemonEncounters {
 		fmt.Println(pokemon.Pokemon.Name)
 	}
+	return nil
+}
+
+func catch(parameters []string) error {
+	if len(parameters) < 1 {
+		return errors.New("Not enough arguments. Usage: catch <pokemon-name>")
+	}
+	url := "https://pokeapi.co/api/v2/pokemon/" + parameters[0]
+	jsonData, err := pokeapi.PokeApiRequest(url)
+	if string(jsonData) == "Not Found" {
+		fmt.Println("Pokemon not found")
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Throwing a Pokeball at %s...\n", parameters[0])
+	pokemon, err := pokeapi.MarshalResults[pokeapi.Pokemon](jsonData)
+	if err != nil {
+		return err
+	}
+	chance := rand.Intn(pokemon.BaseExperience)
+	if chance < 50 {
+		fmt.Printf("%s was caught!\n", pokemon.Name)
+		pokedex[pokemon.Name] = pokemon
+		return nil
+	}
+	fmt.Printf("%s escaped!\n", pokemon.Name)
+
 	return nil
 }
