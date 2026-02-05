@@ -3,14 +3,9 @@ pokedexcli retrieves data from Poke API
 */
 package main
 
-import (
-	"log/slog"
-)
-
 var commands map[string]cliCommand
 
 func main() {
-	slog.Info("Program start")
 	prompt := "Pokedex > "
 	mapConfig := config{
 		next:     "https://pokeapi.co/api/v2/location-area/",
@@ -41,6 +36,12 @@ func main() {
 			description: "Displays the previous set of 20 locations",
 			callback:    commandMapb,
 			cfg:         &mapConfig,
+		},
+		"explore": {
+			name:        "explore",
+			description: "Get the list of found pokemon in an area. Takes an area name as an argument",
+			callback:    explore,
+			cfg:         nil,
 		},
 	}
 

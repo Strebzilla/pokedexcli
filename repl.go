@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"os"
 	"pokedexcli/internal/pokeapi"
@@ -12,7 +13,7 @@ type cliCommand struct {
 	cfg         *config
 	name        string
 	description string
-	callback    func() error
+	callback    func([]string) error
 }
 
 type config struct {
@@ -28,8 +29,8 @@ func startRepl(prompt string) {
 	scanner := bufio.NewScanner(os.Stdin)
 
 	for {
-		command := ReadCommand(scanner, prompt)
-		ExecuteCommand(command)
+		command, parameters := ReadCommand(scanner, prompt)
+		ExecuteCommand(command, parameters)
 	}
 }
 
@@ -40,34 +41,50 @@ func cleanInput(text string) []string {
 	return splitString
 }
 
-func ReadCommand(scanner *bufio.Scanner, prompt string) string {
+func ReadCommand(scanner *bufio.Scanner, prompt string) (command string, parameters []string) {
+
 	fmt.Print(prompt)
 	scanner.Scan()
 	userInput := scanner.Text()
 	userCleanInput := cleanInput(userInput)
-	return userCleanInput[0]
+	cleanInputLength := len(userCleanInput)
+
+	if cleanInputLength < 1 {
+		return "", parameters
+	}
+
+	command = userCleanInput[0]
+	if cleanInputLength == 1 {
+		return command, parameters
+	}
+
+	parameters = userCleanInput[1:]
+	return command, parameters
 }
 
-func ExecuteCommand(command string) {
+func ExecuteCommand(command string, parameters []string) {
+	if command == "" {
+		return
+	}
 	_, exists := commands[command]
 	if !exists {
-		fmt.Println("invalid command")
+		fmt.Println("Invalid command")
 		return
 	}
 
-	err := commands[command].callback()
+	err := commands[command].callback(parameters)
 	if err != nil {
 		fmt.Println(fmt.Errorf("Error Executing callback: %w", err))
 	}
 }
 
-func commandExit() error {
+func commandExit(parameters []string) error {
 	fmt.Println("Closing the Pokedex... Goodbye!")
 	os.Exit(0)
 	return fmt.Errorf("Failed to exit")
 }
 
-func commandHelp() error {
+func commandHelp(parameters []string) error {
 	fmt.Print("Welcome to the Pokedex!\nUsage:\n\n")
 	for _, command := range commands {
 		fmt.Print(command.formatInfo())
@@ -75,36 +92,64 @@ func commandHelp() error {
 	return nil
 }
 
-func commandMap() error {
+func commandMap(parameters []string) error {
 	if commands["map"].cfg.next == "" {
 		return nil
 	}
-	json, err := pokeapi.GetPokeJson(commands["map"].cfg.next)
+	jsonData, err := pokeapi.PokeApiRequest(commands["map"].cfg.next)
 	if err != nil {
 		return err
 	}
-	for _, location := range json.Results {
+	locations, err := pokeapi.MarshalResults[pokeapi.Locations](jsonData)
+
+	for _, location := range locations.Results {
 		fmt.Println(location.Name)
 	}
-	commands["map"].cfg.next = json.Next
-	commands["map"].cfg.previous = json.Previous
+	commands["map"].cfg.next = locations.Next
+	commands["map"].cfg.previous = locations.Previous
 	return nil
 }
 
-func commandMapb() error {
+func commandMapb(parameters []string) error {
 	if commands["map"].cfg.previous == "" {
 		fmt.Println("you're on the first page")
 		return nil
 	}
-
-	json, err := pokeapi.GetPokeJson(commands["map"].cfg.previous)
+	jsonData, err := pokeapi.PokeApiRequest(commands["map"].cfg.previous)
 	if err != nil {
 		return err
 	}
-	for _, location := range json.Results {
+	locations, err := pokeapi.MarshalResults[pokeapi.Locations](jsonData)
+
+	for _, location := range locations.Results {
 		fmt.Println(location.Name)
 	}
-	commands["map"].cfg.next = json.Next
-	commands["map"].cfg.previous = json.Previous
+	commands["map"].cfg.next = locations.Next
+	commands["map"].cfg.previous = locations.Previous
+	return nil
+}
+
+func explore(parameters []string) error {
+	if len(parameters) < 1 {
+		return errors.New("Not enough arguments. Usage: explore <area-name>")
+	}
+	url := "https://pokeapi.co/api/v2/location-area/" + parameters[0]
+	jsonData, err := pokeapi.PokeApiRequest(url)
+	if string(jsonData) == "Not Found" {
+		fmt.Println("Area not found")
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	location, err := pokeapi.MarshalResults[pokeapi.Location](jsonData)
+
+	if len(location.PokemonEncounters) == 0 {
+		fmt.Println("No pokemon in this area")
+		return nil
+	}
+	for _, pokemon := range location.PokemonEncounters {
+		fmt.Println(pokemon.Pokemon.Name)
+	}
 	return nil
 }

@@ -1,7 +1,7 @@
 package pokecache
 
 import (
-	"log/slog"
+	"maps"
 	"sync"
 	"time"
 )
@@ -33,7 +33,6 @@ func NewCache(interval time.Duration) *Cache {
 		}
 	}()
 
-	slog.Info("New cache created")
 	return &newCache
 }
 
@@ -44,7 +43,6 @@ func (c Cache) Add(key string, value []byte) {
 		createdAt: time.Now(),
 		val:       value,
 	}
-	slog.Info("Cache entry added")
 }
 
 func (c Cache) Get(key string) ([]byte, bool) {
@@ -52,7 +50,6 @@ func (c Cache) Get(key string) ([]byte, bool) {
 	defer c.mu.Unlock()
 	val, exists := c.entries[key]
 	if !exists {
-		slog.Info("Cache miss")
 		return nil, false
 	}
 	return val.val, true
@@ -61,11 +58,14 @@ func (c Cache) Get(key string) ([]byte, bool) {
 func (c Cache) reapLoop() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	slog.Info("Reap loop ran")
-	for i, entry := range c.entries {
-		if time.Since(entry.createdAt) > c.interval {
-			delete(c.entries, i)
-			slog.Info("Reaped", "url", i)
+	if len(c.entries) == 0 {
+		return
+	}
+	keys := maps.Keys(c.entries)
+
+	for key := range keys {
+		if time.Since(c.entries[key].createdAt) > c.interval {
+			delete(c.entries, key)
 		}
 	}
 }
